@@ -1,18 +1,16 @@
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind CSSはCDN経由で読み込むため、ここではカスタムスタイルのみ定義します */
 
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+/* スクロールバー非表示ユーティリティ */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
+/* 基本設定 */
 body {
   font-family: 'Noto Sans JP', sans-serif;
   background-color: #f3f4f6;
