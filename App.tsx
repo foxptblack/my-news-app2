@@ -5,11 +5,12 @@ import TabNavigation from './components/TabNavigation';
 import NewsCard from './components/NewsCard';
 import TabSettingsModal from './components/TabSettingsModal';
 import { NewsArticle, TabConfig } from './types';
-import { DEFAULT_TABS } from './constants';
+import { DEFAULT_TABS, DEFAULT_MAX_TABS } from './constants';
 
 const READ_IDS_KEY = 'news_aggregator_read_ids';
 const HIDDEN_SOURCES_KEY = 'news_aggregator_hidden_sources';
 const TABS_CONFIG_KEY = 'news_aggregator_tabs_config';
+const MAX_TABS_CONFIG_KEY = 'news_aggregator_max_tabs';
 // キャッシュの有効期限（ミリ秒）: 5分
 const CACHE_DURATION = 5 * 60 * 1000;
 
@@ -51,6 +52,18 @@ const App: React.FC = () => {
     return false;
   });
 
+  // Max Tabs State
+  const [maxTabs, setMaxTabs] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const savedMax = localStorage.getItem(MAX_TABS_CONFIG_KEY);
+      if (savedMax) {
+        const parsed = parseInt(savedMax, 10);
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
+    }
+    return DEFAULT_MAX_TABS;
+  });
+
   // Load from LocalStorage on mount (Read/Hidden IDs)
   useEffect(() => {
     const savedRead = localStorage.getItem(READ_IDS_KEY);
@@ -84,10 +97,16 @@ const App: React.FC = () => {
     localStorage.setItem(TABS_CONFIG_KEY, JSON.stringify(tabs));
   }, [tabs]);
 
+  // Sync Max Tabs to LocalStorage
+  useEffect(() => {
+    localStorage.setItem(MAX_TABS_CONFIG_KEY, maxTabs.toString());
+  }, [maxTabs]);
+
   const toggleDarkMode = () => setIsDarkMode(prev => !prev);
 
-  const handleSaveTabs = (newTabs: TabConfig[]) => {
+  const handleSaveSettings = (newTabs: TabConfig[], newMaxTabs: number) => {
     setTabs(newTabs);
+    setMaxTabs(newMaxTabs);
     // タブ設定変更時はキャッシュをクリアして再取得
     newsCache.current = {}; 
     setNewsList([]); 
@@ -132,6 +151,20 @@ const App: React.FC = () => {
     return `https://news.google.com/rss/search?q=${encodeURIComponent(keyword)}&hl=ja&gl=JP&ceid=JP:ja`;
   };
 
+  // HTML文字列から最初の画像URLを抽出するヘルパー関数
+  const extractImageFromHtml = (htmlContent: string): string | null => {
+    if (!htmlContent) return null;
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+      const img = doc.querySelector('img');
+      return img ? img.getAttribute('src') : null;
+    } catch (e) {
+      console.warn('Failed to parse HTML for image extraction', e);
+      return null;
+    }
+  };
+
   const fetchNews = useCallback(async (tabId: string, currentTabs: TabConfig[] = tabs) => {
     setLoading(true);
     setError(null);
@@ -163,6 +196,7 @@ const App: React.FC = () => {
       if (data.status !== 'ok') throw new Error(data.message || 'Failed to fetch RSS');
 
       const mappedNews: NewsArticle[] = data.items.map((item: any, index: number) => {
+        // HTMLタグを除去して要約テキストを作成
         const cleanSummary = item.description 
           ? item.description.replace(/<[^>]*>?/gm, '').substring(0, 100) + '...'
           : '記事の要約はありません。';
@@ -176,6 +210,32 @@ const App: React.FC = () => {
           title = parts.join(' - ');
         }
 
+        // --- 画像URLの決定ロジック ---
+        let imageUrl = null;
+
+        // 1. RSS標準のサムネイルフィールドがあれば最優先
+        if (item.thumbnail) {
+          imageUrl = item.thumbnail;
+        } 
+        // 2. enclosure（添付ファイル）があれば次点
+        else if (item.enclosure?.link) {
+          imageUrl = item.enclosure.link;
+        } 
+        // 3. description（概要HTML）の中にimgタグがあれば抽出
+        else if (item.description) {
+          imageUrl = extractImageFromHtml(item.description);
+        }
+        // 4. content（本文HTML）の中にimgタグがあれば抽出
+        // ※ rss2jsonでは 'content' プロパティで本文が返ることがある
+        if (!imageUrl && item.content) {
+          imageUrl = extractImageFromHtml(item.content);
+        }
+
+        // 5. 上記すべてで見つからない場合はフォールバック画像（ランダム生成）
+        if (!imageUrl) {
+          imageUrl = `https://picsum.photos/seed/${encodeURIComponent(item.title)}/800/450`;
+        }
+
         const dateObj = new Date(item.pubDate);
 
         return {
@@ -185,7 +245,7 @@ const App: React.FC = () => {
           date: dateObj.toLocaleDateString('ja-JP'),
           pubDate: dateObj.toISOString(),
           summary: cleanSummary,
-          imageUrl: item.thumbnail || item.enclosure?.link || `https://picsum.photos/seed/${encodeURIComponent(item.title)}/800/450`,
+          imageUrl: imageUrl,
           source: source.trim(),
           link: item.link
         };
@@ -345,7 +405,8 @@ const App: React.FC = () => {
           isOpen={isSettingsOpen} 
           onClose={() => setIsSettingsOpen(false)} 
           tabs={tabs}
-          onSave={handleSaveTabs}
+          maxTabs={maxTabs}
+          onSave={handleSaveSettings}
         />
       </div>
     </div>

@@ -10,5 +10,5 @@ export const DEFAULT_TABS: TabConfig[] = [
   { id: 'tab-5', label: '多摩の歴史', icon: 'fa-landmark', keyword: '多摩 歴史' },
 ];
 
-// タブの最大作成数
-export const MAX_TABS = 7;
+// デフォルトの最大タブ作成数
+export const DEFAULT_MAX_TABS = 7;
