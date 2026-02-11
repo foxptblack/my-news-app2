@@ -5,8 +5,7 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // base: './' を削除し、デフォルトのルートパス設定を使用します。
-  // これによりMIME typeエラーやパス解決の問題を防ぎます。
+  base: './',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
