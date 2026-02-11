@@ -1,0 +1,5 @@
+{
+  "name": "Personal News Aggregator",
+  "description": "A mobile-optimized news aggregator with tabs for specific interests like Mitaka Bus, Gadgets, and Tama History, featuring a sleek card-based UI.",
+  "requestFramePermissions": []
+}
