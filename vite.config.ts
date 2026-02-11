@@ -5,8 +5,7 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // GitHub Pagesなどのサブディレクトリへのデプロイに対応するために相対パスを使用
-  base: './',
+  // 開発サーバーでのパス解決を安定させるため、base設定をデフォルト（ルートパス）に戻します
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
