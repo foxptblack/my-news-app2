@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Personal News Aggregator</title>
   
-  <!-- 基本スタイル（CSS読み込み前の表示崩れ防止） -->
+  <!-- 基本スタイル -->
   <style>
     body {
       margin: 0;
@@ -28,7 +28,7 @@
     }
   </style>
 
-  <!-- Tailwind CSS (必要に応じてpostcss等でビルドされるが、開発用に残す) -->
+  <!-- Tailwind CSS (開発用) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -71,7 +71,7 @@
     <div class="loading-fallback">アプリを起動しています...</div>
   </div>
 
-  <!-- Viteのエントリーポイント: ここでReactアプリ(index.tsx)を読み込みます -->
-  <script type="module" src="/index.tsx"></script>
+  <!-- Viteのエントリーポイント: 相対パスに変更 -->
+  <script type="module" src="./index.tsx"></script>
 </body>
 </html>
